@@ -4,8 +4,8 @@ import glob
 import os
 
 if __name__ == "__main__":
-    raster_pattern = 'reenvironmentalcovariatesgrid/uganda_*.tif'
-    output_directory = 'StandardizedUganda/'
+    raster_pattern = "Uganda Covariate Rasters/uganda_elevation_2km.tif"
+    output_directory = 'Uganda Standardized Rasters/'
     
     file_paths = glob.glob(raster_pattern)
     
