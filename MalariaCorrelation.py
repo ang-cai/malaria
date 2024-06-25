@@ -7,7 +7,7 @@ lst = rioxarray.open_rasterio("Uganda Standardized Rastors/standard_uganda_LSTda
 rainfall = rioxarray.open_rasterio("Uganda Standardized Rastors/standard_uganda_Rainfall_CHIRPS_2km_2018.tif")
 elevation= rioxarray.open_rasterio("Uganda Standardized Rastors/standard_uganda_elevation.tif")
 
-distances = [10, 22, 51] # in km
+distances = [10, 22, 102] # in km
 
 # Subtract smooth from raw and then create a correlation graphic between covariates
 for distance in distances:
