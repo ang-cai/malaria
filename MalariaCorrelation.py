@@ -2,18 +2,19 @@ import numpy
 import rioxarray
 import matplotlib.pyplot as plt
 
-distances = [1.0, 2.2, 10.2] # in meters
+# Covariates
+lst = rioxarray.open_rasterio("Uganda Standardized Rastors/standard_uganda_LSTday_2km_2018.tif")
+rainfall = rioxarray.open_rasterio("Uganda Standardized Rastors/standard_uganda_Rainfall_CHIRPS_2km_2018.tif")
+elevation= rioxarray.open_rasterio("Uganda Standardized Rastors/standard_uganda_elevation.tif")
+
+distances = [10, 22, 51] # in km
 
 # Subtract smooth from raw and then create a correlation graphic between covariates
 for distance in distances:
-    # Covariates
-    lst_smooth = rioxarray.open_rasterio("Smoothed Uganda/smooth_uganda_lst_" + str(distance) + "m_2018.tif")
-    rainfall_smooth = rioxarray.open_rasterio("Smoothed Uganda/smooth_uganda_rain_" + str(distance) + "m_2018.tif")
-    elevation_smooth = rioxarray.open_rasterio("Smoothed Uganda/smooth_uganda_elevation_" + str(distance) + "m_2018.tif")
-
-    lst = rioxarray.open_rasterio("Standardized Uganda/standard_uganda_LSTday_2km_2018.tif")
-    rainfall = rioxarray.open_rasterio("Standardized Uganda/standard_uganda_Rainfall_CHIRPS_2km_2018.tif")
-    elevation= rioxarray.open_rasterio("Standardized Uganda/standard_uganda_elevation.tif")
+    # Subtract smooth
+    lst_smooth = rioxarray.open_rasterio("Uganda Smoothed Rasters/smooth_uganda_lst_" + str(distance) + "km_2018.tif")
+    rainfall_smooth = rioxarray.open_rasterio("Uganda Smoothed Rasters/smooth_uganda_rain_" + str(distance) + "km_2018.tif")
+    elevation_smooth = rioxarray.open_rasterio("Uganda Smoothed Rasters/smooth_uganda_elevation_" + str(distance) + "km_2018.tif")
     
     lst = lst - lst_smooth
     rainfall = rainfall - rainfall_smooth
@@ -39,4 +40,4 @@ for distance in distances:
     ax.xaxis.set_label_position('bottom')
     plt.title(str(-distance) + "m smooth", fontsize=20)
     plt.tight_layout()
-    plt.savefig("Uganda Malaria/" + str(distance) + "m_covariates_correlation_uganda_2km_2018.png") 
+    plt.savefig("Uganda Malaria Data/" + str(distance) + "km_covariates_correlation_uganda_2km_2018.png") 
