@@ -23,7 +23,7 @@ if __name__ == "__main__":
     X = np.stack((x, y, lst, rain, elevation), axis = -1)
 
     # Create train points and test grid
-    X_train, X_test, Z_train, Z_test = train_test_split(X, Z, test_size=0.9)
+    X_train, X_test, Z_train, Z_test = train_test_split(X, Z, test_size=0.5)
     malaria_prevalence = rioxarray.open_rasterio("Uganda Malaria Data/mock_malaria_prevelance_uganda_2km_2018.tif").squeeze()
     left, bottom, right, top = malaria_prevalence.rio.bounds()
     x = np.linspace(left, right, len(X_test))
@@ -52,6 +52,10 @@ if __name__ == "__main__":
 
         # Train model
         model = gpflow.models.GPR(data = (X_train, Z_train), kernel = kernel)
+
+        # Fix lengthscale?
+        gpflow.set_trainable(model.kernel.kernels[0].lengthscales, False) 
+
         opt = gpflow.optimizers.Scipy()
         opt.minimize(model.training_loss, model.trainable_variables)
 
