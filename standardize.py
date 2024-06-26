@@ -3,6 +3,7 @@ import xarray
 import glob
 import os
 
+# Fills nan values with the mean and returns a standardized raster with the equation xds - mean(xds) / std(xds)
 if __name__ == "__main__":
     raster_pattern = "Uganda Covariate Rasters/uganda_elevation_2km.tif"
     output_directory = 'Uganda Standardized Rasters/'
