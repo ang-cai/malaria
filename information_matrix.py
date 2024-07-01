@@ -15,11 +15,11 @@ if __name__ == "__main__":
     lengthscales = [5, 1, .5, .1, 0]
 
     # Create design matrix where factors are column vectors
-    # lst = data["lst"].to_numpy()
+    lst = data["lst"].to_numpy()
     rain = data["rainfall"].to_numpy()
-    # elevation = data["elevation"].to_numpy()
-    # design = np.stack((lst, rain, elevation), axis = -1)
-    design = rain[:, np.newaxis]
+    elevation = data["elevation"].to_numpy()
+    design = np.stack((lst, rain, elevation), axis = -1)
+    # design = rain[:, np.newaxis]
 
     # Distance values
     x = data["x"].to_numpy()
@@ -56,9 +56,13 @@ if __name__ == "__main__":
             sign, without_info = np.linalg.slogdet(variance_covar_minus)
             information_gain.append(-(with_info - without_info))
         
+        information_gain_scaled = np.array(information_gain)
+        information_gain_scaled = np.divide(information_gain_scaled, .125)
+        information_gain_scaled = np.float_power(information_gain_scaled, .25)
+
         # Plot information gain with lengthscale
         # Scatter
-        axis[i].scatter(x, y, c=information_gain, cmap="viridis", zorder=1)
+        axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis", zorder=1)
         axis[i].get_xaxis().set_visible(False)
         axis[i].get_yaxis().set_visible(False)
         figure.subplots_adjust(wspace=0)
@@ -71,6 +75,7 @@ if __name__ == "__main__":
         else:
             axis[i].set_title("GLS: length scale=" + str(lengthscales[i]))  
     figure.suptitle("Uganda Information Gain of Rain Covariates", fontsize="xx-large")
+
     plt.savefig("Uganda Malaria Data/mock_malaria_cases_uganda_rain_information_matrix_2km_2018.png", bbox_inches="tight", pad_inches=0) 
     plt.show()
 
