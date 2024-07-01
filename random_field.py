@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     # Load in Malaria data
     tf.experimental.numpy.experimental_enable_numpy_behavior()
-    uganda_data = pd.read_csv("Uganda Malaria Data/mock_malaria_cases_uganda_2km_2018.csv")
+    uganda_data = pd.read_csv("Uganda Malaria Data/uganda_mock_malaria_cases_2km_2018.csv")
     
     # numpy requires column vectors
     Z = uganda_data["malaria"].to_numpy().reshape(-1, 1)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Create train points and test grid
     X_train, X_test, Z_train, Z_test = train_test_split(X, Z, test_size=0.5)
-    malaria_prevalence = rioxarray.open_rasterio("Uganda Malaria Data/mock_malaria_prevelance_uganda_2km_2018.tif").squeeze()
+    malaria_prevalence = rioxarray.open_rasterio("Uganda Malaria Datauganda_mock_malaria_prevelance_2km_2018.tif").squeeze()
     left, bottom, right, top = malaria_prevalence.rio.bounds()
     x = np.linspace(left, right, len(X_test))
     y = np.linspace(bottom, top, len(X_test))
@@ -73,5 +73,5 @@ if __name__ == "__main__":
         figure.subplots_adjust(wspace=0)
         axis[i].set_title("GLS: length scale=" + str(lengthscales[i]))
 
-    plt.savefig("Uganda Malaria Data/mock_malaria_cases_uganda_randomfield_2km_2018.png", bbox_inches="tight", pad_inches=0) 
+    plt.savefig("Uganda Malaria Data/randomfield_uganda_mock_malaria_cases_2km_2018.png", bbox_inches="tight", pad_inches=0) 
     plt.show()

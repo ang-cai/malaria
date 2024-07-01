@@ -45,10 +45,10 @@ if __name__ == "__main__":
         axis[i].xaxis.set_ticks_position('bottom')
         axis[i].xaxis.set_label_position('bottom')
         if i > 0:
-            axis[i].set_title(str(-distances[i]) + "m smooth", fontsize=20)
+            axis[i].set_title(str(-distances[i]) + "km smooth", fontsize=20)
         else:
             axis[i].set_title("Raw Data", fontsize=20)
     
     # Save graphic
     plt.tight_layout()
-    plt.savefig("Uganda Malaria Data/covariates_correlation_uganda_2km_2018.png", bbox_inches="tight") 
+    plt.savefig("Uganda Malaria Data/correlation_uganda_lst_rain_elevation_2km_2018.png", bbox_inches="tight") 

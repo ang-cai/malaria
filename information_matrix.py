@@ -3,10 +3,11 @@ import rasterio
 import numpy as np
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
-# Returns a raster of Malaria prevalence using a linear function on the covariates plus a random field function
+
+# Returns a graph of information gain for n random points of Malaria covariates using different lengthscales
 if __name__ == "__main__":
     # Load in Malaria data
-    data = pd.read_csv("Uganda Malaria Data/mock_malaria_cases_uganda_2km_2018.csv")
+    data = pd.read_csv("Uganda Malaria Data/uganda_mock_malaria_cases_2km_2018.csv")
     
     # Variables
     std_err = .05
@@ -77,7 +78,7 @@ if __name__ == "__main__":
             axis[i].set_title("GLS: length scale=" + str(lengthscales[i]))  
     figure.suptitle("Uganda Information Gain of All Covariates", fontsize="xx-large")
 
-    plt.savefig("Uganda Malaria Data/mock_malaria_cases_uganda_all_information_matrix_2km_2018.png", bbox_inches="tight", pad_inches=0) 
+    plt.savefig("Uganda Malaria Data/information_matrix_uganda_all_2km_2018.png", bbox_inches="tight", pad_inches=0) 
     plt.show()
 
 
