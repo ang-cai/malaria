@@ -1,9 +1,8 @@
 import pandas as pd
+import rasterio
 import numpy as np
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
-import matplotlib.cbook as cbook
-
 # Returns a raster of Malaria prevalence using a linear function on the covariates plus a random field function
 if __name__ == "__main__":
     # Load in Malaria data
@@ -61,22 +60,24 @@ if __name__ == "__main__":
         information_gain_scaled = np.float_power(information_gain_scaled, .25)
 
         # Plot information gain with lengthscale
+        # Raster
+        # with rasterio.open("Uganda Covariate Rasters/uganda_Rainfall_CHIRPS_2km_2018.tif") as src:
+        #     image = src.read(1)  # Read the first band
+        #     extent = (src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top)
+        # axis[i].imshow(image, cmap='gray', extent=extent)
         # Scatter
-        axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis", zorder=1)
+        # axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis", marker="$O$")
+        axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis")
         axis[i].get_xaxis().set_visible(False)
         axis[i].get_yaxis().set_visible(False)
         figure.subplots_adjust(wspace=0)
         if lengthscales[i] == 0:
             axis[i].set_title("Independent")
-            # Raster
-            # with cbook.get_sample_data("Uganda Covariate Rasters/uganda_Rainfall_CHIRPS_2km_2018.tif") as tiffile:
-            #     raster = tiffile.read()
-            # axis[i].imshow(raster, cmap="viridis")
         else:
             axis[i].set_title("GLS: length scale=" + str(lengthscales[i]))  
-    figure.suptitle("Uganda Information Gain of Rain Covariates", fontsize="xx-large")
+    figure.suptitle("Uganda Information Gain of All Covariates", fontsize="xx-large")
 
-    plt.savefig("Uganda Malaria Data/mock_malaria_cases_uganda_rain_information_matrix_2km_2018.png", bbox_inches="tight", pad_inches=0) 
+    plt.savefig("Uganda Malaria Data/mock_malaria_cases_uganda_all_information_matrix_2km_2018.png", bbox_inches="tight", pad_inches=0) 
     plt.show()
 
 
