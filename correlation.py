@@ -1,40 +1,57 @@
-import numpy
-import rioxarray
-import matplotlib.pyplot as plt
+'''
+Creates correlation matrix 
 
-# Returns a graphic of a correlation matrix given covariates
+Returns a graphic of a correlation matrix given covariates
+'''
+
+import numpy as np
+import rioxarray
+import xarray as xr
+import matplotlib.pyplot as plt
+import rioxarray.raster_dataset
+
+def subtract_smooth(dataset: xr.Dataset, covariate: str, distance: int, year: int):
+    '''Subtracts a smoothed by km distance raster from covariate in given year
+
+        Returns:
+            Dataset
+    '''
+    base_path = "Uganda Smoothed Rasters/smooth_uganda_"
+    smooth = rioxarray.open_rasterio(f"{base_path}{covariate}_{distance}km_{year}.tif")
+    return dataset - smooth
+
 if __name__ == "__main__":
     # Covariates
-    lst = rioxarray.open_rasterio("Uganda Standardized Rasters/standard_uganda_LSTday_2km_2018.tif")
-    rainfall = rioxarray.open_rasterio("Uganda Standardized Rasters/standard_uganda_Rainfall_CHIRPS_2km_2018.tif")
-    elevation= rioxarray.open_rasterio("Uganda Standardized Rasters/standard_uganda_elevation_2km.tif")
+    lst_path = "Uganda Standardized Rasters/standard_uganda_LSTday_2km_2018.tif"
+    rain_path = "Uganda Standardized Rasters/standard_uganda_Rainfall_CHIRPS_2km_2018.tif"
+    ele_path = "Uganda Standardized Rasters/standard_uganda_elevation_2km.tif"
 
+    lst = rioxarray.open_rasterio(lst_path)
+    rainfall = rioxarray.open_rasterio(rain_path)
+    elevation = rioxarray.open_rasterio(ele_path)
+    
     # Different smoothing graphics
     distances = [0, 102, 22, 10] # in km
+    year = 2018
 
     # Initialize graphic
     figure, axis = plt.subplots(1, len(distances), figsize=(15, 6))
 
-    # Subtract smooth from raw and then create a correlation graphic between covariates
+    # Subtract smooth and then create a correlation graphic between covariates
     for i in range(len(distances)):
-        if i > 0:
-            # Subtract smooth
-            lst_smooth = rioxarray.open_rasterio("Uganda Smoothed Rasters/smooth_uganda_lst_" + str(distances[i]) + "km_2018.tif")
-            rainfall_smooth = rioxarray.open_rasterio("Uganda Smoothed Rasters/smooth_uganda_rain_" + str(distances[i]) + "km_2018.tif")
-            elevation_smooth = rioxarray.open_rasterio("Uganda Smoothed Rasters/smooth_uganda_elevation_" + str(distances[i]) + "km_2018.tif")
-            
-            lst = lst - lst_smooth
-            rainfall = rainfall - rainfall_smooth
-            elevation = elevation - elevation_smooth
+        if distances[i] > 0:
+            lst = subtract_smooth(lst, "lst", distances[i], year)
+            rainfall = subtract_smooth(rainfall, "rain", distances[i], year)
+            elevation = subtract_smooth(elevation, "elevation", distances[i], year)
 
         lst_values = lst.to_numpy().flatten()
         rainfall_values = rainfall.to_numpy().flatten()
         elevation_values = elevation.to_numpy().flatten()
 
         # Prepare matrix in style of slideshow example
-        covariates = numpy.vstack((lst_values, rainfall_values, elevation_values))
-        correlation_matrix = numpy.corrcoef(covariates)
-        pretty_correlation_matrix = numpy.absolute(numpy.rot90(correlation_matrix))
+        covariates = np.vstack((lst_values, rainfall_values, elevation_values))
+        correlation_matrix = np.corrcoef(covariates)
+        pretty_correlation_matrix = np.absolute(np.rot90(correlation_matrix))
 
         # Plot the correlation matrix
         axis[i].matshow(pretty_correlation_matrix, cmap="viridis")
@@ -44,11 +61,13 @@ if __name__ == "__main__":
         axis[i].set_yticklabels(["Elevation", "Rainfall", "LST"], fontsize=16)
         axis[i].xaxis.set_ticks_position('bottom')
         axis[i].xaxis.set_label_position('bottom')
-        if i > 0:
+        if distances[i] > 0:
             axis[i].set_title(str(-distances[i]) + "km smooth", fontsize=20)
         else:
             axis[i].set_title("Raw Data", fontsize=20)
     
     # Save graphic
     plt.tight_layout()
-    plt.savefig("Uganda Malaria Data/correlation_uganda_lst_rain_elevation_2km_2018.png", bbox_inches="tight") 
+
+    title = "Uganda Malaria Data/correlation_uganda_lst_rain_elevation_2km_2018.png"
+    plt.savefig(title, bbox_inches="tight") 

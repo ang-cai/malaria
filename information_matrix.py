@@ -1,10 +1,16 @@
+'''
+Create information matrix
+
+Returns a graph of information gain for n random points of Malaria covariates 
+using different lengthscales
+'''
+
 import pandas as pd
 import rasterio
 import numpy as np
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
 
-# Returns a graph of information gain for n random points of Malaria covariates using different lengthscales
 if __name__ == "__main__":
     # Load in Malaria data
     data = pd.read_csv("Uganda Malaria Data/uganda_mock_malaria_cases_2km_2018.csv")
