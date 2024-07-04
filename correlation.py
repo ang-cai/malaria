@@ -10,15 +10,17 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import rioxarray.raster_dataset
 
-def subtract_smooth(dataset: xr.Dataset, covariate: str, distance: int, year: int):
+def subtract_smooth(dataset: xr.Dataset, covariate: str, distance: int, 
+                    year: int) -> list:
     '''Subtracts a smoothed by km distance raster from covariate in given year
+    and flattens the values into a numpy array.
 
-        Returns:
-            Dataset
+    Returns 1D list of values.
     '''
-    base_path = "Uganda Smoothed Rasters/smooth_uganda_"
-    smooth = rioxarray.open_rasterio(f"{base_path}{covariate}_{distance}km_{year}.tif")
-    return dataset - smooth
+    path = f"Uganda Smoothed Rasters/smooth_uganda_{covariate}_{distance}km_{year}.tif"
+    smooth = rioxarray.open_rasterio(path)
+    smoothed = (dataset - smooth).to_numpy().flatten()
+    return smoothed
 
 if __name__ == "__main__":
     # Covariates
@@ -40,13 +42,11 @@ if __name__ == "__main__":
     # Subtract smooth and then create a correlation graphic between covariates
     for i in range(len(distances)):
         if distances[i] > 0:
-            lst = subtract_smooth(lst, "lst", distances[i], year)
-            rainfall = subtract_smooth(rainfall, "rain", distances[i], year)
-            elevation = subtract_smooth(elevation, "elevation", distances[i], year)
-
-        lst_values = lst.to_numpy().flatten()
-        rainfall_values = rainfall.to_numpy().flatten()
-        elevation_values = elevation.to_numpy().flatten()
+            lst_values = subtract_smooth(lst, "lst", distances[i], year)
+            rainfall_values = subtract_smooth(rainfall, "rain", distances[i], 
+                                              year)
+            elevation_values = subtract_smooth(elevation, "elevation", 
+                                               distances[i], year)
 
         # Prepare matrix in style of slideshow example
         covariates = np.vstack((lst_values, rainfall_values, elevation_values))
@@ -57,7 +57,8 @@ if __name__ == "__main__":
         axis[i].matshow(pretty_correlation_matrix, cmap="viridis")
         axis[i].set_xticks([0, 1, 2])
         axis[i].set_yticks([0, 1, 2])
-        axis[i].set_xticklabels(["LST", "Rainfall", "Elevation"], rotation=90, fontsize=16)
+        axis[i].set_xticklabels(["LST", "Rainfall", "Elevation"], rotation=90, 
+                                fontsize=16)
         axis[i].set_yticklabels(["Elevation", "Rainfall", "LST"], fontsize=16)
         axis[i].xaxis.set_ticks_position('bottom')
         axis[i].xaxis.set_label_position('bottom')

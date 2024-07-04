@@ -9,9 +9,8 @@ import xarray as xr
 from scipy.ndimage import generic_filter
 
 def mean_filter(window):
-    '''
-    Returns the mean of a given window area, which is used for generic_filter to
-    take the mean of values with a given pixel size window.
+    '''Returns the mean of a given window area, which is used for generic_filter 
+    to take the mean of values with a given pixel size window.
     '''
     return window.mean()
 

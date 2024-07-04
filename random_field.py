@@ -13,6 +13,46 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
+def random_field_train(
+        x_train: list, z_train: list, lengthscale: int, dims: int, 
+        covariates: int):
+    '''Given list x_train of coordinates in the first dims columns and 
+    covariates in the next columns, trains dims columns with the RBF kernel and 
+    covariates columns with the linear model.
+
+    Returns model from gpflow.
+    '''
+    # Create kernal
+    rbf = gpflow.kernels.RBF(active_dims = range(dims + 1), 
+                             lengthscales=lengthscale)
+    linear = gpflow.kernels.Linear(active_dims = range(dims, dims + covariates))
+    kernel = rbf + linear
+
+    # Train model
+    model = gpflow.models.GPR(data = (x_train, z_train), kernel = kernel)
+
+    # Fix lengthscale
+    gpflow.set_trainable(model.kernel.kernels[0].lengthscales, False) 
+
+    opt = gpflow.optimizers.Scipy()
+    opt.minimize(model.training_loss, model.trainable_variables)
+
+    return model
+
+def random_field_test(model: gpflow.models.GPR, test_data: list, shape: list):
+    '''Fits a random field using the Gaussian Process given a model and 
+    test_data. Reshapees the results into shape.
+
+    Returns tuples Z_fmean_grid and Z_fvar_grid from gpflow predict_f.
+    '''
+    Z_fmean_grid, Z_fvar_grid = model.predict_f(test_data)
+
+    # Reshape the grid predictions to match the grid shape
+    Z_fmean_grid = Z_fmean_grid.reshape(shape.shape)
+    Z_fvar_grid = Z_fvar_grid.reshape(shape.shape)
+
+    return (Z_fmean_grid, Z_fvar_grid)
+
 if __name__ == "__main__":
     tf.experimental.numpy.experimental_enable_numpy_behavior()
 
@@ -50,40 +90,22 @@ if __name__ == "__main__":
         X_grid = np.concatenate((X_grid, data.reshape(-1, 1)), axis = -1)
 
     # Different lengthscales in graphic
-    length = [5, 1, .5, .1, .05]
+    lenscale = [5, 1, .5, .1, .05]
     
     # Initialize graphic
-    figure, axis = plt.subplots(1, len(length), figsize=(30, 6), sharey=True)
+    figure, axis = plt.subplots(1, len(lenscale), figsize=(30, 6), sharey=True)
 
-    for i in range(len(length)):
-        # Kernal is made of RBF acting on the coordinates and linear acting on the covariates
-        rbf = gpflow.kernels.RBF(active_dims = [0, 1], lengthscales=length[i])
-        linear = gpflow.kernels.Linear(active_dims = [2, 3, 4])
-        kernel = rbf + linear
-
-        # Train model
-        model = gpflow.models.GPR(data = (X_train, Z_train), kernel = kernel)
-
-        # Fix lengthscale?
-        gpflow.set_trainable(model.kernel.kernels[0].lengthscales, False) 
-
-        opt = gpflow.optimizers.Scipy()
-        opt.minimize(model.training_loss, model.trainable_variables)
-
-        # Fit model onto coordinate area
-        Z_fmean_grid, Z_fvar_grid = model.predict_f(X_grid)
-
-        # Reshape the grid predictions to match the grid shape
-        Z_fmean_grid = Z_fmean_grid.reshape(x1.shape)
-        Z_fvar_grid = Z_fvar_grid.reshape(x1.shape)
+    for i in range(len(lenscale)):
+        model = random_field_train(X_train, Z_train, lenscale[i], 2, 3)
+        Z_fmean_grid, Z_fvar_grid = random_field_test(model, X_grid, x1)
 
         # Add figure to graphic
         axis[i].contourf(x, y, Z_fmean_grid, levels=100, cmap='viridis')
         axis[i].get_xaxis().set_visible(False)
         axis[i].get_yaxis().set_visible(False)
         figure.subplots_adjust(wspace=0)
-        axis[i].set_title("GLS: length scale=" + str(lengthscales[i]))
+        axis[i].set_title(f"GLS: length scale={lenscale[i]}")
 
-
-    plt.savefig("Uganda Malaria Data/randomfield_uganda_mock_malaria_cases_2km_2018.png", bbox_inches="tight", pad_inches=0) 
+    title = "Uganda Malaria Data/randomfield_uganda_mock_malaria_cases_2km_2018.png"
+    plt.savefig(title, bbox_inches="tight", pad_inches=0) 
     plt.show()
