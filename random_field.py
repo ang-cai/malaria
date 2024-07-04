@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # Create train points and test grid
     X_train, X_test, Z_train, Z_test = train_test_split(X, Z, test_size=0.5)
 
-    mal_prev_path = "Uganda Malaria Datauganda_mock_malaria_prevelance_2km_2018.tif"
+    mal_prev_path = "Uganda Malaria Data/uganda_mock_malaria_prevelance_2km_2018.tif"
     malaria_prevalence = rioxarray.open_rasterio(mal_prev_path).squeeze()
     left, bottom, right, top = malaria_prevalence.rio.bounds()
     x = np.linspace(left, right, len(X_test))
@@ -106,6 +106,6 @@ if __name__ == "__main__":
         figure.subplots_adjust(wspace=0)
         axis[i].set_title(f"GLS: length scale={lenscale[i]}")
 
-    title = "Uganda Malaria Data/randomfield_uganda_mock_malaria_cases_2km_2018.png"
+    title = "Uganda Malaria Data/TESTrandomfield_uganda_mock_malaria_cases_2km_2018.png"
     plt.savefig(title, bbox_inches="tight", pad_inches=0) 
     plt.show()
