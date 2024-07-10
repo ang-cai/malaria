@@ -26,7 +26,7 @@ def _spatial_correlation(distances: list, std_err: int, spatial_std_err: int,
     return spatial_correlation
 
 def _variance_covariance(std_err: int, spatial_std_err: int, design: list, 
-                         spatial_correlation: list=None):
+                         spatial_correlation=None):
     '''Creates a variance covariance matrix. Forumla: 
     Variance-covariance = (design' * spatial correlation * design)^-1
     
@@ -128,10 +128,10 @@ if __name__ == "__main__":
         else:
             axis[i].set_title(f"GLS: length scale={lenscales[i]}") 
     
-    title = "Uganda Information Gain of All Covariates"
+    title = "Uganda Information Gain of Rain Covariate"
     figure.suptitle(title, fontsize="xx-large")
 
-    file = "Uganda Malaria Data/information_matrix_uganda_all_2km_2018.png"
+    file = "Uganda Malaria Data/information_matrix_uganda_rain_2km_2018.png"
     plt.savefig(file, bbox_inches="tight", pad_inches=0) 
     plt.show()
 
