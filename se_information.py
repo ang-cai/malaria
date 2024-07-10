@@ -2,7 +2,7 @@
 Information matrix
 
 Returns a graph of information gain for n random points of Malaria covariates 
-using different lengthscales
+using different lengthscales.
 '''
 
 import pandas as pd
@@ -26,14 +26,14 @@ def _spatial_correlation(distances: list, std_err: int, spatial_std_err: int,
     return spatial_correlation
 
 def _variance_covariance(std_err: int, spatial_std_err: int, design: list, 
-                         spatial_correlation=None):
+                         spatial_correlation: list=None):
     '''Creates a variance covariance matrix. Forumla: 
     Variance-covariance = (design' * spatial correlation * design)^-1
     
     Returns numpy array.
     '''
     # Independent case
-    if spatial_correlation is None:
+    if not spatial_correlation:
         variance_covariance = (std_err**2 + spatial_std_err**2) * np.linalg.inv(
             np.matmul(design.T, design))
     else:
@@ -42,12 +42,12 @@ def _variance_covariance(std_err: int, spatial_std_err: int, design: list,
 
     return variance_covariance
 
-def information_matrix(
+def se_information_matrix(
         std_err: int, spatial_std_err: int, design: list, distances: list,
         lengthscale: int):
     '''Creates an information gain matrix scaled to show variance. 
 
-    Returns information matrix square root scaled.
+    Returns squared exponential information matrix square root scaled.
     '''
     # Independent case
     if lengthscale == 0:
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     # Create spatial correlation matrix
     for i in range(len(lenscales)):
-        information_gain_scaled = information_matrix(
+        information_gain_scaled = se_information_matrix(
             STD_ERR, SPATIAL_STD_ERR, design, distances, lenscales[i])
 
         # Plot information gain with lengthscale
