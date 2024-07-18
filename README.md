@@ -5,6 +5,4 @@ Analyzing Malaria covariate raster data in East Africa using confirmatory factor
 
 Data:
 
-Global Administrative Areas (2022). GADM database of Global Administrative Areas, version 4.1. URL: www.gadm.org.
-
-Spatial Data Repository - Geospatial Covariates. https://spatialdata.dhsprogram.com/covariates/.
+Global Administrative Areas (2022). GADM database of Global Administrative Areas, version 4.1. URL: www.gadm.org. \n Spatial Data Repository - Geospatial Covariates. https://spatialdata.dhsprogram.com/covariates/.
