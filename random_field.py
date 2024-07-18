@@ -22,7 +22,7 @@ def random_field_train(
 
     Returns model from gpflow.
     '''
-    # Create kernal
+    # Create kernel
     rbf = gpflow.kernels.RBF(active_dims = range(dims + 1), 
                              lengthscales=lengthscale)
     linear = gpflow.kernels.Linear(active_dims = range(dims, dims + covariates))
@@ -32,7 +32,7 @@ def random_field_train(
     model = gpflow.models.GPR(data = (x_train, z_train), kernel = kernel)
 
     # Fix lengthscale
-    gpflow.set_trainable(model.kernel.kernels[0].lengthscales, False) 
+    # gpflow.set_trainable(model.kernel.kernels[0].lengthscales, False) 
 
     opt = gpflow.optimizers.Scipy()
     opt.minimize(model.training_loss, model.trainable_variables)
@@ -55,9 +55,10 @@ def random_field_test(model: gpflow.models.GPR, test_data: list, shape: list):
 
 if __name__ == "__main__":
     tf.experimental.numpy.experimental_enable_numpy_behavior()
+    year = "2000"
 
     # Load in Malaria data
-    uganda_path = "Uganda Malaria Data/uganda_mock_malaria_cases_2km_2018.csv"
+    uganda_path = f"Uganda Malaria Data/uganda_mock_malaria_cases_2km_{year}.csv"
     uganda_data = pd.read_csv(uganda_path)
     
     # numpy requires column vectors
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     # Create train points and test grid
     X_train, X_test, Z_train, Z_test = train_test_split(X, Z, test_size=0.5)
 
-    mal_prev_path = "Uganda Malaria Data/uganda_mock_malaria_prevelance_2km_2018.tif"
+    mal_prev_path = f"Uganda Malaria Data/uganda_mock_malaria_prevalence_2km_{year}.tif"
     malaria_prevalence = rioxarray.open_rasterio(mal_prev_path).squeeze()
     left, bottom, right, top = malaria_prevalence.rio.bounds()
     x = np.linspace(left, right, len(X_test))
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     x_points = xr.DataArray(X_grid[:, 0])
     y_points = xr.DataArray(X_grid[:, 1])
 
-    covariates = ["LSTday_2km_2018", "Rainfall_CHIRPS_2km_2018", "elevation_2km"]
+    covariates = [f"LSTday_2km_{year}", f"Rainfall_CHIRPS_2km_{year}", "elevation_2km"]
     for covariate in covariates:
         src_path = f"Uganda Standardized Rasters/standard_uganda_{covariate}.tif"
         src = rioxarray.open_rasterio(src_path)
@@ -90,22 +91,27 @@ if __name__ == "__main__":
         X_grid = np.concatenate((X_grid, data.reshape(-1, 1)), axis = -1)
 
     # Different lengthscales in graphic
-    lenscale = [5, 1, .5, .1, .05]
+    lenscale = [1]
     
     # Initialize graphic
-    figure, axis = plt.subplots(1, len(lenscale), figsize=(30, 6), sharey=True)
+    figure, axis = plt.subplots(1, len(lenscale), figsize=(7, 6), sharey=True)
 
     for i in range(len(lenscale)):
         model = random_field_train(X_train, Z_train, lenscale[i], 2, 3)
         Z_fmean_grid, Z_fvar_grid = random_field_test(model, X_grid, x1)
 
         # Add figure to graphic
-        axis[i].contourf(x, y, Z_fmean_grid, levels=100, cmap='viridis')
-        axis[i].get_xaxis().set_visible(False)
-        axis[i].get_yaxis().set_visible(False)
-        figure.subplots_adjust(wspace=0)
-        axis[i].set_title(f"GLS: length scale={lenscale[i]}")
+        image = axis.contourf(x, y, Z_fmean_grid, levels=100, cmap='viridis', 
+                              vmax=.8)
+        axis.set_xlabel("x")
+        axis.set_ylabel("y")
+        figure.colorbar(image)
+        # axis[i].get_xaxis().set_visible(False)
+        # axis[i].get_yaxis().set_visible(False)
+        # figure.subplots_adjust(wspace=0)
+        # axis[i].set_title(f"GLS: length scale={lenscale[i]}")
+        axis.set_title(f"GLMM Predicted Malaria Prevalence Uganda {year}")
 
-    title = "Uganda Malaria Data/TESTrandomfield_uganda_mock_malaria_cases_2km_2018.png"
+    title = f"Uganda Malaria Data/randomfield_uganda_mock_malaria_prevalene_2km_{year}.png"
     plt.savefig(title, bbox_inches="tight", pad_inches=0) 
     plt.show()
