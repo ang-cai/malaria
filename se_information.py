@@ -5,11 +5,15 @@ Returns a graph of information gain for n random points of Malaria covariates
 using different lengthscales.
 '''
 
+import os
+import glob
 import pandas as pd
+import geopandas as gpd
 import rasterio
 import numpy as np
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
+from shapely import wkt
 
 def _spatial_correlation(distances: list, std_err: int, spatial_std_err: int,
                          lengthscale: int):
@@ -25,15 +29,15 @@ def _spatial_correlation(distances: list, std_err: int, spatial_std_err: int,
     )
     return spatial_correlation
 
-def _variance_covariance(std_err: int, spatial_std_err: int, design: list, 
-                         spatial_correlation: list=None):
+def _variance_covariance(std_err: int, spatial_std_err: int, design: np.ndarray, 
+                         spatial_correlation: np.ndarray=None):
     '''Creates a variance covariance matrix. Forumla: 
     Variance-covariance = (design' * spatial correlation * design)^-1
     
     Returns numpy array.
     '''
     # Independent case
-    if not spatial_correlation:
+    if spatial_correlation is None or len(spatial_correlation) == 0:
         variance_covariance = (std_err**2 + spatial_std_err**2) * np.linalg.inv(
             np.matmul(design.T, design))
     else:
@@ -43,8 +47,8 @@ def _variance_covariance(std_err: int, spatial_std_err: int, design: list,
     return variance_covariance
 
 def se_information_matrix(
-        std_err: int, spatial_std_err: int, design: list, distances: list,
-        lengthscale: int):
+        std_err: int, spatial_std_err: int, design: np.ndarray, 
+        distances: np.ndarray, lengthscale: int):
     '''Creates an information gain matrix scaled to show variance. 
 
     Returns squared exponential information matrix square root scaled.
@@ -81,58 +85,73 @@ def se_information_matrix(
     return information_gain_scaled
 
 if __name__ == "__main__":
-    data_path = "Uganda Malaria Data/uganda_mock_malaria_cases_2km_2018.csv"
-    data = pd.read_csv(data_path)
+    gps_pattern = "East Africa Standardized Data/burundi.shp"
+    output_directory = 'East Africa Information Gain/'
+    gps_paths = sorted(glob.glob(gps_pattern))
     
-    # Variables
-    STD_ERR = .05
-    SPATIAL_STD_ERR = .5
-    lenscales = [5, 1, .5, .1, 0]
+    for gps_path in gps_paths:
+        data = gpd.read_file(gps_path)
+        year = int(data.at[0, "DHSYEAR"])
+        n_spots = data.sample(100)
+        
+        # Variables
+        STD_ERR = .05
+        SPATIAL_STD_ERR = .5
+        lenscales = [5, 1, .5, .1, 0]
+        gps_columns = 6
 
-    # Create design matrix where factors are column vectors
-    # lst = data["lst"].to_numpy()
-    rain = data["rainfall"].to_numpy()
-    # elevation = data["elevation"].to_numpy()
-    # design = np.stack((lst, rain, elevation), axis = -1)
-    design = rain[:, np.newaxis]
+        # Create design matrix where factors are column vectors
+        design = n_spots.iloc[:, gps_columns:-1].to_numpy()
 
-    # Distance values
-    x = data["x"].to_numpy()
-    y = data["y"].to_numpy()
-    distances = np.stack((x, y), axis = -1)
+        # Distance values
+        x = n_spots["LATNUM"].to_numpy()
+        y = n_spots["LONGNUM"].to_numpy()
+        distances = np.stack((x, y), axis = -1)
 
-    # Initialize graphic
-    figure, axis = plt.subplots(1, len(lenscales), figsize=(30, 6), sharey=True)
+        # Initialize graphic
+        figure, axis = plt.subplots(1, len(lenscales), figsize=(30, 6), sharey=True)
 
-    # Create spatial correlation matrix
-    for i in range(len(lenscales)):
-        information_gain_scaled = se_information_matrix(
-            STD_ERR, SPATIAL_STD_ERR, design, distances, lenscales[i])
+        # Create spatial correlation matrix
+        for i in range(len(lenscales)):
+            information_gain_scaled = se_information_matrix(
+                STD_ERR, SPATIAL_STD_ERR, design, distances, lenscales[i])
 
-        # Plot information gain with lengthscale
-        # Raster underneath
-        raster = "Uganda Covariate Rasters/uganda_Rainfall_CHIRPS_2km_2018.tif"
-        with rasterio.open(raster) as src:
-            image = src.read(1)
-            extent = (src.bounds.left, src.bounds.right, src.bounds.bottom, 
-                      src.bounds.top)
-        axis[i].imshow(image, cmap='gray', extent=extent)
-        # Scatter
-        axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis", 
-                        marker="$O$")
-        axis[i].get_xaxis().set_visible(False)
-        axis[i].get_yaxis().set_visible(False)
-        figure.subplots_adjust(wspace=0)
-        if lenscales[i] == 0:
-            axis[i].set_title("Independent")
-        else:
-            axis[i].set_title(f"GLS: length scale={lenscales[i]}") 
-    
-    title = "Uganda Information Gain of Rain Covariate"
-    figure.suptitle(title, fontsize="xx-large")
+            # Plot information gain with lengthscale
+            # Raster underneath
+            # raster = "Uganda Covariate Rasters/uganda_Rainfall_CHIRPS_2km_2018.tif"
+            # with rasterio.open(raster) as src:
+            #     image = src.read(1)
+            #     extent = (src.bounds.left, src.bounds.right, src.bounds.bottom, 
+            #             src.bounds.top)
+            # axis[i].imshow(image, cmap='gray', extent=extent)
+            # Scatter
+            # axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis", 
+            #                 marker="$O$")
+            # axis[i].get_xaxis().set_visible(False)
+            # axis[i].get_yaxis().set_visible(False)
+            # figure.subplots_adjust(wspace=0)
+            # if lenscales[i] == 0:
+            #     axis[i].set_title("Independent")
+            # else:
+            #     axis[i].set_title(f"GLS: length scale={lenscales[i]}") 
+            # SHP
+            n_spots["info_gain"] = information_gain_scaled.tolist()
+            n_spots.plot(column="info_gain", ax=axis[i])
+            axis[i].get_xaxis().set_visible(False)
+            axis[i].get_yaxis().set_visible(False)
+            figure.subplots_adjust(wspace=0)
+            if lenscales[i] == 0:
+                axis[i].set_title("Independent")
+            else:
+                axis[i].set_title(f"GLS: length scale={lenscales[i]}") 
+        
+        basename = os.path.basename(gps_path)
+        components = basename.split(".")
+        title = f"{components[0].title()} Information Gain of All Covariates"
+        figure.suptitle(title, fontsize="xx-large")
 
-    file = "Uganda Malaria Data/information_matrix_uganda_rain_2km_2018.png"
-    plt.savefig(file, bbox_inches="tight", pad_inches=0) 
-    plt.show()
+        file = f"East Africa Information Gain/information_matrix_{components[0]}_{year}.png"
+        plt.savefig(file, bbox_inches="tight", pad_inches=0) 
+        plt.show()
 
 

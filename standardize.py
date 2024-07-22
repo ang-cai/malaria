@@ -6,17 +6,21 @@ equation xds - mean(xds) / std(xds)
 '''
 
 import rioxarray
+import numpy as np
+import geopandas as gpd
 import pandas as pd
 import glob
 import os
 
 if __name__ == "__main__":
-    raster_pattern = "East Africa Covariate Data/*"
+    input_pattern = "East Africa Covariate Data/*"
+    gps_pattern = "East Africa Geodata/**/*.shp"
     output_directory = 'East Africa Standardized Data/'
+    outdated = ["2010", "200", "19", "Malaria"]
+    file_paths = sorted(glob.glob(input_pattern))
+    gps_paths = sorted(glob.glob(gps_pattern))
     
-    file_paths = glob.glob(raster_pattern)
-    
-    for file_path in file_paths:
+    for file_path, gps_path in zip(file_paths, gps_paths):
         # for tif
         # xds = rioxarray.open_rasterio(file_path)
         # filled = xds.fillna(xds.mean())
@@ -26,9 +30,30 @@ if __name__ == "__main__":
 
         # for csv
         data = pd.read_csv(file_path)
-        means = data.iloc[:, 6:].mean()
-        filled = data.iloc[:, 6:].fillna(means)
+        coord = gpd.read_file(gps_path)
+
+        # Uses -9999 and NA instead of nan
+        nan = data.iloc[:, 6:].replace(-9999, np.nan)
+        nan = data.iloc[:, 6:].replace("NA", np.nan)
+        nan_sums = nan.isna().sum()
+        columns_with_nans = nan_sums[nan_sums > 0].index
+        means = nan.iloc[:, 6:].mean()
+        filled = nan.iloc[:, 6:].fillna(means)
         standardized = filled.apply(lambda x: (x - x.mean()) / x.std())
-        data.iloc[:, 6:] = standardized
-        print(data)
-        
+        standardized = standardized.dropna(axis="columns")
+
+        # Only want 2015 covariates
+        for date in outdated:
+            standardized = standardized[standardized.columns.drop(list(standardized.filter(regex=date)))]
+
+        # Add GPS data 
+        standardized = gpd.GeoDataFrame(pd.concat([data.iloc[:, :4], coord["LATNUM"], coord["LONGNUM"], coord["geometry"], standardized], axis=1))
+        standardized = standardized.dropna(subset="DHSID")
+        standardized = standardized[((standardized["LATNUM"] != 0) | (standardized["LONGNUM"] != 0))]
+
+        # Save
+        basename = os.path.basename(file_path)
+        components = basename.split("_")
+        output_path = f"{output_directory}{components[0]}.shp"
+        standardized.to_file(output_path)
+
