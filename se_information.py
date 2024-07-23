@@ -122,14 +122,15 @@ if __name__ == "__main__":
                 STD_ERR, SPATIAL_STD_ERR, design, distances, lenscales[i])
 
             # Plot information gain with lengthscale
-            # Raster underneath
+            # TIF
             # raster = "Uganda Covariate Rasters/uganda_Rainfall_CHIRPS_2km_2018.tif"
             # with rasterio.open(raster) as src:
             #     image = src.read(1)
             #     extent = (src.bounds.left, src.bounds.right, src.bounds.bottom, 
             #             src.bounds.top)
             # axis[i].imshow(image, cmap='gray', extent=extent)
-            # Scatter
+
+            # CSV
             # axis[i].scatter(x, y, c=information_gain_scaled, cmap="viridis", 
             #                 marker="$O$")
             # axis[i].get_xaxis().set_visible(False)
@@ -139,10 +140,11 @@ if __name__ == "__main__":
             #     axis[i].set_title("Independent")
             # else:
             #     axis[i].set_title(f"GLS: length scale={lenscales[i]}") 
+
             # SHP
             bounds.plot(ax=axis[i], color="gray")
             n_spots["info_gain"] = information_gain_scaled.tolist()
-            n_spots.plot(column="info_gain", ax=axis[i], markersize=10)
+            n_spots.plot(column="info_gain", ax=axis[i], markersize=15)
             axis[i].get_xaxis().set_visible(False)
             axis[i].get_yaxis().set_visible(False)
             figure.subplots_adjust(wspace=0)

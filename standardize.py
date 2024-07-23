@@ -13,7 +13,7 @@ import glob
 import os
 
 if __name__ == "__main__":
-    input_pattern = "East Africa Covariate Data/*"
+    input_pattern = "East Africa Covariate Data/*.csv"
     gps_pattern = "East Africa Geodata/**/* Clusters/*.shp"
     output_directory = 'East Africa Standardized Data/'
     outdated = ["2010", "200", "19", "Malaria"]
@@ -31,25 +31,28 @@ if __name__ == "__main__":
         # for csv
         data = pd.read_csv(file_path)
         coord = gpd.read_file(gps_path)
+        gps_columns = 6
 
         # Uses -9999 and NA instead of nan
-        nan = data.iloc[:, 6:].replace(-9999, np.nan)
-        nan = data.iloc[:, 6:].replace("NA", np.nan)
-        nan_sums = nan.isna().sum()
-        columns_with_nans = nan_sums[nan_sums > 0].index
-        means = nan.iloc[:, 6:].mean()
-        filled = nan.iloc[:, 6:].fillna(means)
+        nan = data.iloc[:, gps_columns:].replace(-9999, np.nan)
+        nan = nan.iloc[:, gps_columns:].replace("NA", np.nan)
+        means = nan.iloc[:, gps_columns:].mean()
+        filled = nan.iloc[:, gps_columns:].fillna(means)
         standardized = filled.apply(lambda x: (x - x.mean()) / x.std())
         standardized = standardized.dropna(axis="columns")
 
-        # Only want 2015 covariates
+        # Removing older than 2015 covariates
         for date in outdated:
-            standardized = standardized[standardized.columns.drop(list(standardized.filter(regex=date)))]
+            standardized = standardized[standardized.columns.drop(list(
+                standardized.filter(regex=date)))]
 
-        # Add GPS data 
-        standardized = gpd.GeoDataFrame(pd.concat([data.iloc[:, :4], coord["LATNUM"], coord["LONGNUM"], coord["geometry"], standardized], axis=1))
+        # Add GPS data except for nan (0, 0)
+        standardized = gpd.GeoDataFrame(pd.concat(
+            [data.iloc[:, :4], coord["LATNUM"], coord["LONGNUM"],
+              coord["geometry"], standardized], axis=1))
         standardized = standardized.dropna(subset="DHSID")
-        standardized = standardized[((standardized["LATNUM"] != 0) | (standardized["LONGNUM"] != 0))]
+        standardized = standardized[((standardized["LATNUM"] != 0) | 
+                                     (standardized["LONGNUM"] != 0))]
 
         # Save
         basename = os.path.basename(file_path)
