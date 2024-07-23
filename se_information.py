@@ -38,11 +38,13 @@ def _variance_covariance(std_err: int, spatial_std_err: int, design: np.ndarray,
     '''
     # Independent case
     if spatial_correlation is None or len(spatial_correlation) == 0:
+        regularized = np.matmul(design.T, design)
         variance_covariance = (std_err**2 + spatial_std_err**2) * np.linalg.inv(
-            np.matmul(design.T, design))
+            regularized + np.identity(len(regularized)) * 1e-5)
     else:
-        variance_covariance = np.linalg.inv(np.matmul(
-            np.matmul(design.T, np.linalg.inv(spatial_correlation)), design))
+        regularized = np.matmul(np.matmul(design.T, np.linalg.inv(
+            spatial_correlation)), design)
+        variance_covariance = np.linalg.inv(regularized + np.identity(len(regularized)) * 1e-5)
 
     return variance_covariance
 
@@ -85,12 +87,15 @@ def se_information_matrix(
     return information_gain_scaled
 
 if __name__ == "__main__":
-    gps_pattern = "East Africa Standardized Data/burundi.shp"
-    output_directory = 'East Africa Information Gain/'
+    gps_pattern = "East Africa Standardized Data/*.shp"
+    boundary_pattern = "East Africa Geodata/**/* Bounds/sdr_subnational_boundaries.shp"
+    output_directory = "East Africa Information Gain/"
     gps_paths = sorted(glob.glob(gps_pattern))
+    boundary_paths = sorted(glob.glob(boundary_pattern))
     
-    for gps_path in gps_paths:
+    for gps_path, boundary_path in zip(gps_paths, boundary_paths):
         data = gpd.read_file(gps_path)
+        bounds = gpd.read_file(boundary_path)
         year = int(data.at[0, "DHSYEAR"])
         n_spots = data.sample(100)
         
@@ -135,8 +140,9 @@ if __name__ == "__main__":
             # else:
             #     axis[i].set_title(f"GLS: length scale={lenscales[i]}") 
             # SHP
+            bounds.plot(ax=axis[i], color="gray")
             n_spots["info_gain"] = information_gain_scaled.tolist()
-            n_spots.plot(column="info_gain", ax=axis[i])
+            n_spots.plot(column="info_gain", ax=axis[i], markersize=10)
             axis[i].get_xaxis().set_visible(False)
             axis[i].get_yaxis().set_visible(False)
             figure.subplots_adjust(wspace=0)
@@ -153,5 +159,3 @@ if __name__ == "__main__":
         file = f"East Africa Information Gain/information_matrix_{components[0]}_{year}.png"
         plt.savefig(file, bbox_inches="tight", pad_inches=0) 
         plt.show()
-
-

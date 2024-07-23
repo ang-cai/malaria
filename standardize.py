@@ -14,7 +14,7 @@ import os
 
 if __name__ == "__main__":
     input_pattern = "East Africa Covariate Data/*"
-    gps_pattern = "East Africa Geodata/**/*.shp"
+    gps_pattern = "East Africa Geodata/**/* Clusters/*.shp"
     output_directory = 'East Africa Standardized Data/'
     outdated = ["2010", "200", "19", "Malaria"]
     file_paths = sorted(glob.glob(input_pattern))

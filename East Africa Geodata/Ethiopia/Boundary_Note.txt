@@ -1,3 +1,0 @@
-The following facilities are geographically outside the correct
-administrative area but are in the correct locations: 543, 545,
-557, 573, 574, 576, 664, 676, 679, 1323, and 1324.
