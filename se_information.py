@@ -107,8 +107,8 @@ if __name__ == "__main__":
 
         # Create design matrix where factors are column vectors
         # design = n_spots.iloc[:, gps_columns:-1].to_numpy()
-        design = np.transpose(n_spots["Rainfall_2"].to_numpy())
-        print(design)
+        design = n_spots["Rainfall_2"].to_numpy() # Just rain
+        design = design[:, np.newaxis]
 
         # Distance matrix
         x = n_spots["LATNUM"].to_numpy()
