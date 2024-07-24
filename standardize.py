@@ -2,9 +2,8 @@
 Standardize
 
 Fills nan values with the mean and returns a standardized raster with the 
-equation xds - mean(xds) / std(xds)
+equation xds - mean(xds) / std(xds). If necessary, adds the GPS data.
 '''
-
 import rioxarray
 import numpy as np
 import geopandas as gpd
@@ -21,14 +20,14 @@ if __name__ == "__main__":
     gps_paths = sorted(glob.glob(gps_pattern))
     
     for file_path, gps_path in zip(file_paths, gps_paths):
-        # for tif
+        # TIF
         # xds = rioxarray.open_rasterio(file_path)
         # filled = xds.fillna(xds.mean())
         # standardized = (filled - filled.mean()) / filled.std()
         # output_path = f"{output_directory}standard_{os.path.basename(file_path)}"
         # standardized.rio.to_raster(output_path)
 
-        # for csv
+        # CSV
         data = pd.read_csv(file_path)
         coord = gpd.read_file(gps_path)
         gps_columns = 6

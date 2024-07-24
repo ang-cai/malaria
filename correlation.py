@@ -34,8 +34,6 @@ if __name__ == "__main__":
     rain = rioxarray.open_rasterio(rain_path)
     elevation = rioxarray.open_rasterio(ele_path)
 
-    print(type(lst))
-
     # Different smoothing graphics
     year = 2018
     distances = [0, 102, 22, 10] # in km
