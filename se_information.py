@@ -108,7 +108,7 @@ def projected_information_matrix(
     canonical_design = np.linalg.inv(np.matmul(x_proj.T, x_proj))
     spatial_precision_matrix_chol = np.linalg.cholesky(np.linalg.inv(variance_covar))
     for i in range(len(distances)):
-        prec_excl = np.delete(np.delete(spatial_precision_matrix_chol, i, axis = 1), i, axis=0)
+        prec_excl = np.delete(spatial_precision_matrix_chol, i, axis = 1)
         design_excl = np.delete(canonical_design, i, axis=0)
         matrix = np.matmul(prec_excl, design_excl)
         information_gain.append(np.linalg.inv(np.matmul(matrix.T, matrix))[1, 1])
