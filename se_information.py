@@ -12,7 +12,7 @@ import numpy as np
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
 
-def _spatial_correlation(distances: np.ndarray, std_err: int, 
+def spatial_correlation(distances: np.ndarray, std_err: int, 
                          spatial_std_err: int, lengthscale: int):
     '''Creates a spatial correlation matrix. Formula: 
     Spatial correlation = std err^2 * I + spatial std err^2 * exp(-D^2/r^2/2)
@@ -26,7 +26,7 @@ def _spatial_correlation(distances: np.ndarray, std_err: int,
     )
     return spatial_correlation
 
-def _variance_covariance(std_err: int, spatial_std_err: int, design: np.ndarray, 
+def variance_covariance(std_err: int, spatial_std_err: int, design: np.ndarray, 
                          spatial_correlation: np.ndarray=None):
     '''Creates a variance covariance matrix. Forumla: 
     Variance-covariance = (design' * spatial correlation * design)^-1
@@ -57,11 +57,11 @@ def se_information_matrix(
     '''
     # Independent case
     if lengthscale == 0:
-        variance_covar = _variance_covariance(std_err, spatial_std_err, design)
+        variance_covar = variance_covariance(std_err, spatial_std_err, design)
     else:
-        spatial_corr = _spatial_correlation(
+        spatial_corr = spatial_correlation(
             distances, std_err, spatial_std_err, lengthscale)
-        variance_covar = _variance_covariance(
+        variance_covar = variance_covariance(
             std_err, spatial_std_err, design, spatial_corr)
 
     # Information gain at point i = -(log det variance covariance - log det 
@@ -71,14 +71,47 @@ def se_information_matrix(
     for i in range(len(distances)):
         design_minus = np.delete(design, i, 0)
         if lengthscale == 0:
-            variance_covar_minus = _variance_covariance(
+            variance_covar_minus = variance_covariance(
                 std_err, spatial_std_err, design_minus)
         else:
             spatial_corr_minus = np.delete(np.delete(spatial_corr, i, 0), i, 1)
-            variance_covar_minus = _variance_covariance(
+            variance_covar_minus = variance_covariance(
                 std_err, spatial_std_err, design_minus, spatial_corr_minus)
         sign, without_info = np.linalg.slogdet(variance_covar_minus)
         information_gain.append(-(with_info - without_info))
+    
+    information_gain_scaled = np.array(information_gain)
+    information_gain_scaled = np.divide(information_gain_scaled, .125)
+    information_gain_scaled = np.float_power(information_gain_scaled, .25)
+
+    return information_gain_scaled
+
+def projected_information_matrix(
+        std_err: int, spatial_std_err: int, design: np.ndarray, 
+        distances: np.ndarray, lengthscale: int):
+    '''Creates an information gain matrix scaled to show variance. This is done
+    by projecting the design matrix covariance matrix.
+
+    Returns squared exponential information matrix square root scaled.
+    '''
+    # Independent case
+    if lengthscale == 0:
+        variance_covar = variance_covariance(std_err, spatial_std_err, design)
+    else:
+        spatial_corr = spatial_correlation(
+            distances, std_err, spatial_std_err, lengthscale)
+        variance_covar = variance_covariance(
+            std_err, spatial_std_err, design, spatial_corr)
+
+    information_gain = []
+    x_proj = np.matmul(np.linalg.cholesky(np.linalg.inv(variance_covar)), design)
+    canonical_design = np.linalg.inv(np.matmul(x_proj.T, x_proj))
+    spatial_precision_matrix_chol = np.linalg.cholesky(np.linalg.inv(variance_covar))
+    for i in range(len(distances)):
+        prec_excl = np.delete(np.delete(spatial_precision_matrix_chol, i, axis = 1), i, axis=0)
+        design_excl = np.delete(canonical_design, i, axis=0)
+        matrix = np.matmul(prec_excl, design_excl)
+        information_gain.append(np.linalg.inv(np.matmul(matrix.T, matrix))[1, 1])
     
     information_gain_scaled = np.array(information_gain)
     information_gain_scaled = np.divide(information_gain_scaled, .125)
@@ -106,9 +139,9 @@ if __name__ == "__main__":
         gps_columns = 6
 
         # Create design matrix where factors are column vectors
-        # design = n_spots.iloc[:, gps_columns:-1].to_numpy()
-        design = n_spots["Rainfall_2"].to_numpy() # Just rain
-        design = design[:, np.newaxis]
+        design = n_spots.iloc[:, gps_columns:-1].to_numpy()
+        # design = n_spots["Rainfall_2"].to_numpy() # Just rain
+        # design = design[:, np.newaxis]
 
         # Distance matrix
         x = n_spots["LATNUM"].to_numpy()
@@ -121,7 +154,10 @@ if __name__ == "__main__":
 
         # Create spatial correlation matrix and plot
         for i in range(len(lenscales)):
-            information_gain_scaled = se_information_matrix(
+            # information_gain = se_information_matrix(
+                # STD_ERR, SPATIAL_STD_ERR, design, distances, lenscales[i])
+
+            information_gain = projected_information_matrix(
                 STD_ERR, SPATIAL_STD_ERR, design, distances, lenscales[i])
 
             # TIF background
@@ -138,7 +174,7 @@ if __name__ == "__main__":
 
             # SHP
             bounds.plot(ax=axis[i], color="gray")
-            n_spots["info_gain"] = information_gain_scaled.tolist()
+            n_spots["info_gain"] = information_gain.tolist()
             n_spots.plot(column="info_gain", ax=axis[i], markersize=15)
 
             axis[i].get_xaxis().set_visible(False)
